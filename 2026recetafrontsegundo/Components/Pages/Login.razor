@@ -1,9 +1,18 @@
 ﻿
 @page "/login"
-<PageTitle>login</PageTitle>
-@inject NavigationManager navigation
+
 @using System.Threading.Tasks
-<div class="loginpage">
+@using Microsoft.AspNetCore.Components.Authorization
+@using _2026recetafrontsegundo.Auth
+@using _2026recetafrontsegundo.DTOs
+@using _2026recetafrontsegundo.Services
+
+@inject NavigationManager navigation
+@inject IAuthService authService
+@inject AuthenticationStateProvider authStateProvider
+
+<PageTitle>login</PageTitle>
+<div class="login-page">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-12 col-sm-10 col-md-7 col-lg-5">
@@ -13,25 +22,56 @@
                             <div class="login-logo bg-brand text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
                                 <span class="fw-bold">RA</span>
                             </div>
-
-                            <h2 class="h4 text-brand mb-1">bienvenido</h2>
-                            <p class="text-muted mb-8">inicia sesion para continuar</p>
-                            @if(!string.IsNullOrEmpty(mensajeError))
-                            {
-                                <div class="alert alert-danger alert-dismissible fade show">
-                                    <strong>error</strong> @mensajeError
-                                    <button type="button" class="btn-close" @onclick="() => mensajeError = string.Empty"></button>
-                                </div>
-                            }
+                            <h2 class="h4 text-brand mb-1">Bienvenido</h2>
+                            <p class="text-muted mb-8">Inicia sesion para continuar</p>
                         </div>
-                    </div>
+                        @if (!string.IsNullOrEmpty(mensajeError))
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show">
+                                <strong>Error:</strong> @mensajeError
+                                <button type="button" class="btn-close"
+                                @onclick="() => mensajeError = string.Empty"></button>
+                            </div>
+                        }
+                        <EditForm Model="credenciales" OnValidSubmit="HandleLogin">
+                            <DataAnnotationsValidator />
+                            <div class="mb-3">
+                                <label "class="form-label">Email</label>
+                                <InputText id="email" class="form-control" @bind-Value="credenciales.Email" placeholder="test1@test.com" />
+                            </div>
+                            <ValidationMessage For="@(()=>credenciales.Email)" />
+                            <div class="mb-3">
+                                <label for="password" class="form-label" d-flex justify-content-between>
+                                    <span>contraseña</span>
+                                    <a href="#" class="small-link-brand">¿Olvidaste tu contraseña?</a>
+                                </label>
+                                <InputText id="password" type="password" class="form-control" @bind-Value="credenciales.Password" placeholder="*******" />
+                                <ValidationMessage For="@(()=>credenciales.Password)" />
+                            </div>
+                            
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type=checkbox id="rememberMe" />
+                                    <label class="form-check-label" for="rememberMe">Recuerdarme</label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-brand w-100" disabled="@cargando">
+                                @if (cargando)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Entrar
+                            </button>
+                        </EditForm>
+                   </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 @code {
-    /**
+
     private CredencialesUsuario credenciales = new();
     private bool cargando = false;
     private string mensajeError = string.Empty;
@@ -43,20 +83,22 @@
 
         try
         {
-            // Simulación simple de inicio de sesión. Sustituir por llamada real al servicio de autenticación.
-            await Task.Delay(200);
-            if (!string.IsNullOrWhiteSpace(credenciales.Email) && credenciales.Password == "password")
+            var respuesta = await authService.Login(credenciales);
+            if (respuesta != null)
             {
+                var authProvider = (AuthStateProvider)authStateProvider;
+                authProvider.NotificarLogin(respuesta.Token);
+
                 navigation.NavigateTo("/");
             }
             else
             {
-                mensajeError = "credenciales incorrectas. verifica tu email o contraseña";
+                mensajeError = "Credenciales incorrectas. Verifica tu email y/o contraseña";
             }
         }
         catch (Exception ex)
         {
-            mensajeError = $"error al iniciar sesion: {ex.Message}";
+            mensajeError = $"Error al iniciar sesion: {ex.Message}";
         }
         finally
         {
@@ -64,9 +106,4 @@
         }
     }
 
-    public class CredencialesUsuario
-    {
-        public string? Email { get; set; }
-        public string? Password { get; set; }
-    }**/
 }

@@ -1,4 +1,6 @@
-﻿using _2026recetafrontsegundo.DTOs;
+﻿using System.Net;
+using _2026RecetaFront.Services;
+using _2026recetafrontsegundo.DTOs;
 
 namespace _2026recetafrontsegundo.Services
 {
@@ -14,7 +16,7 @@ namespace _2026recetafrontsegundo.Services
         private readonly HttpClient httpClient;
         private readonly ITokenService tokenService;
         private const string endpoint = "api/Cuentas";
-        public AuthService(HttpClient httpClient, ItokenService tokenService)
+        public AuthService(HttpClient httpClient, ITokenService tokenService)
         {
             this.httpClient = httpClient;
             this.tokenService = tokenService;
@@ -24,7 +26,7 @@ namespace _2026recetafrontsegundo.Services
             try
             {
                 var response = await httpClient.PostAsJsonAsync($"{endpoint}/Login", credencialesUsuario);
-                if (ResponseCachingExtensions.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
                     var respuesta = await response.Content.ReadFromJsonAsync<RespuestaAutenticacion>();
 
@@ -53,7 +55,7 @@ namespace _2026recetafrontsegundo.Services
             {
                 var response = await httpClient.PostAsJsonAsync($"{endpoint}/Register", credenciales);
                 //todo revisar el enpoin en el baken
-                if (response.IsSuccessStatus)
+                if (response.IsSuccessStatusCode)
                 {
                     var respuesta = await response.Content.ReadFromJsonAsync<RespuestaAutenticacion>();
                     if(respuesta != null)
