@@ -2,6 +2,8 @@
 
 Breve frontend Blazor para la gestión de autenticación y demostración de componentes.
 
+aun no tiene la funcionalidad completa
+
 ## Descripción
 
 Proyecto Blazor (Server interactivo) que incluye un servicio de autenticación (AuthService) y modelos básicos para login/registro. Se proporciona la lógica del cliente para comunicarse con una API que expone los endpoints de cuentas.
