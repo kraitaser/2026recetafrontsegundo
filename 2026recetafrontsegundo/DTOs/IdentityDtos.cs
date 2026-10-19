@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace _2026recetafrontsegundo.DTOs
 {
@@ -13,8 +14,11 @@ namespace _2026recetafrontsegundo.DTOs
     }
     public class RespuestaAutenticacion
     {
+        [JsonPropertyName("token")]
         public string Token { get; set; }
+        [JsonPropertyName("expiracion")]
         public DateTime Expiracion { get; set; }
+        [JsonPropertyName("usuarioId")]
         public String UsuarioId { get; set; } = string.Empty;
     }
 }

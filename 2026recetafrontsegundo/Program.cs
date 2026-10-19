@@ -1,4 +1,3 @@
-using _2026RecetaFront.Services;
 using _2026recetafrontsegundo.Auth;
 using _2026recetafrontsegundo.Components;
 using _2026recetafrontsegundo.Services;
@@ -11,7 +10,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<HttpClient>();
-builder.Services.AddScoped<ITokenService, tokenService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<AuthStateProvider>());

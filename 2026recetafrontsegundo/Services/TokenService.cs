@@ -1,6 +1,6 @@
 ﻿using Microsoft.JSInterop;
 
-namespace _2026RecetaFront.Services
+namespace _2026recetafrontsegundo.Services
 {
     public interface ITokenService
     {
@@ -11,13 +11,13 @@ namespace _2026RecetaFront.Services
         Task EliminarToken();
     }
 
-    public class tokenService : ITokenService
+    public class TokenService : ITokenService
     {
         private readonly IJSRuntime jsRuntime;
         private const string TOKEN_KEY = "authToken";
         private const string EXPIRACION_KEY = "tokenExpiracion";
 
-        public tokenService(IJSRuntime jsRuntime)
+        public TokenService(IJSRuntime jsRuntime)
         {
             this.jsRuntime = jsRuntime;
         }

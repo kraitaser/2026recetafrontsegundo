@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using _2026RecetaFront.Services;
 using _2026recetafrontsegundo.DTOs;
 
 namespace _2026recetafrontsegundo.Services
@@ -15,13 +14,13 @@ namespace _2026recetafrontsegundo.Services
     {
         private readonly HttpClient httpClient;
         private readonly ITokenService tokenService;
-        private const string endpoint = "api/Cuentas";
+        private const string endpoint = "http://receta2eb20263.somee.com/api/Accounts";
         public AuthService(HttpClient httpClient, ITokenService tokenService)
         {
             this.httpClient = httpClient;
             this.tokenService = tokenService;
         }
-        public async Task<RespuestaAutenticacion> Login(CredencialesUsuario credencialesUsuario)
+        public async Task<RespuestaAutenticacion?> Login(CredencialesUsuario credencialesUsuario)
         {
             try
             {
