@@ -10,6 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Components\Pages\checkin.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Components\Pages\checkin.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Models\" />
   </ItemGroup>
 

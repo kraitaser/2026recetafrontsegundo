@@ -1,5 +1,4 @@
-﻿
-@page "/login"
+﻿@page "/login"
 @rendermode InteractiveServer
 @using System.Threading.Tasks
 @using Microsoft.AspNetCore.Components.Authorization
@@ -12,6 +11,7 @@
 @inject AuthenticationStateProvider authStateProvider
 
 <PageTitle>login</PageTitle>
+
 <div class="login-page">
     <div class="container">
         <div class="row justify-content-center">
@@ -25,49 +25,53 @@
                             <h2 class="h4 text-brand mb-1">Bienvenido de vuelta</h2>
                             <p class="text-muted mb-8">Inicia sesion para continuar</p>
                         </div>
-                        @if (!string.IsNullOrEmpty(mensajeError))
-                        {
-                            <div class="alert alert-danger alert-dismissible fade show">
-                                <strong>Error:</strong> @mensajeError
-                                <button type="button" class="btn-close"
-                                @onclick="() => mensajeError = string.Empty"></button>
-                            </div>
-                        }
-                        <EditForm Model="credenciales" OnValidSubmit="HandleLogin">
-                            <DataAnnotationsValidator />
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <InputText id="email" class="form-control" @bind-Value="credenciales.Email" placeholder="test1@test.com" />
-                            </div>
-                            <ValidationMessage For="@(()=>credenciales.Email)" />
-                            <div class="mb-3">
-                                <label for="password" class="form-label" d-flex justify-content-between>
-                                    <span>contraseña</span>
-                                    <a href="#" class="small-link-brand">¿Olvidaste tu contraseña?</a>
-                                </label>
-                                <InputText id="password" type="password" class="form-control" @bind-Value="credenciales.Password" placeholder="*******" />
-                                <ValidationMessage For="@(()=>credenciales.Password)" />
-                            </div>
-                            
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type=checkbox id="rememberMe" />
-                                    <label class="form-check-label" for="rememberMe">Recuerdarme</label>
+
+                        <div class="transition-container @transitionClass">
+                            @if (!string.IsNullOrEmpty(mensajeError))
+                            {
+                                <div class="alert alert-danger alert-dismissible fade show">
+                                    <strong>Error:</strong> @mensajeError
+                                    <button type="button" class="btn-close"
+                                    @onclick="() => mensajeError = string.Empty"></button>
                                 </div>
+                            }
+                            <EditForm Model="credenciales" OnValidSubmit="HandleLogin">
+                                <DataAnnotationsValidator />
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <InputText id="email" class="form-control" @bind-Value="credenciales.Email" placeholder="test1@test.com" />
+                                </div>
+                                <ValidationMessage For="@(()=>credenciales.Email)" />
+                                <div class="mb-3">
+                                    <label for="password" class="form-label" d-flex justify-content-between>
+                                        <span>contraseña</span>
+                                        <a href="#" class="small-link-brand">¿Olvidaste tu contraseña?</a>
+                                    </label>
+                                    <InputText id="password" type="password" class="form-control" @bind-Value="credenciales.Password" placeholder="*******" />
+                                    <ValidationMessage For="@(()=>credenciales.Password)" />
+                                </div>
+                                
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type=checkbox id="rememberMe" />
+                                        <label class="form-check-label" for="rememberMe">Recuerdarme</label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-brand w-100" disabled="@cargando">
+                                    @if (cargando)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    Entrar
+                                </button>
+                            </EditForm>
+                            <div class="mb-3 mt-3">
+                                <span class="text-muted mb-3">no tienes cuenta?</span>
+                                <a href="" class="small-link-brand" @onclick="NavigateToSignin" @onclick:preventDefault="true">Registrate</a>
                             </div>
-                            <button type="submit" class="btn btn-brand w-100" disabled="@cargando">
-                                @if (cargando)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2"></span>
-                                }
-                                Entrar
-                            </button>
-                        </EditForm>
-                        <div class="mb-3">
-                            <span class="text-muted mb-3">no tienes cuenta?</span>
-                            <a href="/Signin" class="small-link-brand">Registrate</a>
-                        </div>
-                   </div>
+                        </div> <!-- /.transition-container -->
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -79,6 +83,25 @@
     private CredencialesUsuario credenciales = new();
     private bool cargando = false;
     private string mensajeError = string.Empty;
+
+    // Animación
+    private string transitionClass = "enter";
+    private int animationMs = 300;
+
+    protected override void OnInitialized()
+    {
+        transitionClass = "enter";
+    }
+
+    private async Task NavigateWithTransition(string url)
+    {
+        transitionClass = "exit";
+        StateHasChanged();
+        await Task.Delay(animationMs);
+        navigation.NavigateTo(url);
+    }
+
+    private Task NavigateToSignin() => NavigateWithTransition("/signin");
 
     private async Task HandleLogin()
     {

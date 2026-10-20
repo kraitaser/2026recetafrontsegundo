@@ -1,0 +1,25 @@
+﻿@rendermode InteractiveServer 
+@using System.Threading.Tasks 
+@using Microsoft.AspNetCore.Components.Authorization 
+@using _2026recetafrontsegundo.Auth 
+@using _2026recetafrontsegundo.DTOs 
+@using _2026recetafrontsegundo.Services 
+@inject NavigationManager navigation 
+@inject IAuthService authService 
+@inject AuthenticationStateProvider authStateProvider 
+<PageTitle>checkin</PageTitle>
+ <div></div> 
+@code 
+{ 
+private async Task handleToken() 
+{ 
+var tokenService = new TokenService(); 
+bool autenticado = await tokenService.estaAutenticado(); 
+if (autenticado) 
+{ 
+navigation.NavigateTo("/home"); 
+} else { 
+navigation.NavigateTo("/login"); 
+} 
+} 
+} 

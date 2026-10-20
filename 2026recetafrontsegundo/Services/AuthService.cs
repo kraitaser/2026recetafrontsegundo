@@ -98,7 +98,13 @@ namespace _2026recetafrontsegundo.Services
                 return null;
             }
         }
-
+        //public async Task<respuestaAutenticacion?> isLogged()
+        //{
+        //    try
+        //    {
+        //        var token = await tokenService.ObtenerToken();
+        //    }
+        //}
         public Task logout()
         {
             throw new NotImplementedException();

@@ -58,3 +58,44 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* transición simple para entrada/salida de páginas */
+.transition-container {
+    transition: opacity 800ms ease, transform 800ms ease;
+    will-change: opacity, transform;
+}
+
+    .transition-container.enter {
+        opacity: 0;
+        transform: translateY(80px);
+        animation: enterAnim 800ms forwards ease;
+    }
+
+    .transition-container.exit {
+        opacity: 1;
+        transform: translateY(0);
+        animation: exitAnim 800ms forwards ease;
+    }
+
+@keyframes enterAnim {
+    from {
+        opacity: 0;
+        transform: translateY(80px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes exitAnim {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-80px);
+    }
+}
