@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Components.Authorization;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.HttpOverrides;
 
+
+
+var builder = WebApplication.CreateBuilder(args);
 // (junto a los demás builder.Services)
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
@@ -24,8 +27,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 // ...el resto igual
-
-var builder = WebApplication.CreateBuilder(args);
 
 var redisConnection = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
 
