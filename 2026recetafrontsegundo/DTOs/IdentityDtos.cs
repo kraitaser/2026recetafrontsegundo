@@ -7,18 +7,18 @@ namespace _2026recetafrontsegundo.DTOs
     {
         [Required(ErrorMessage= "el email es requerido")]
         [EmailAddress(ErrorMessage = "el email no es valido")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
         [Required(ErrorMessage = "la contraseña es requerida")]
         [MinLength(8, ErrorMessage = "la contraseña debe tener al menos 8 caracteres")]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
     }
     public class RespuestaAutenticacion
     {
         [JsonPropertyName("token")]
-        public string Token { get; set; }
-        [JsonPropertyName("expiracion")]
+        public string Token { get; set; } = string.Empty;
+        [JsonPropertyName("expiration")]
         public DateTime Expiracion { get; set; }
-        [JsonPropertyName("usuarioId")]
-        public String UsuarioId { get; set; } = string.Empty;
+        [JsonPropertyName("userId")]
+        public string UsuarioId { get; set; } = string.Empty;
     }
 }

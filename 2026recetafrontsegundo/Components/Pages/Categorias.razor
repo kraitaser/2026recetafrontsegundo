@@ -1,0 +1,196 @@
+@page "/categorias"
+@rendermode InteractiveServer
+@using _2026recetafrontsegundo.Models
+@using System.ComponentModel.DataAnnotations
+@inject _2026recetafrontsegundo.Services.ApiClient Api
+
+<PageTitle>Categorías</PageTitle>
+
+<div class="crud-page">
+    <h1>Categorías</h1>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <EditForm Model="categoryForm" OnValidSubmit="SaveCategory" class="crud-form">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="category-name">Nombre</label>
+                <InputText id="category-name"
+                           class="form-control"
+                           @bind-Value="categoryForm.Name" />
+                <ValidationMessage For="@(() => categoryForm.Name)" />
+            </div>
+
+            <div class="form-field">
+                <label for="category-description">Descripción</label>
+                <InputText id="category-description"
+                           class="form-control"
+                           @bind-Value="categoryForm.Description" />
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    @(editingId.HasValue ? "Guardar cambios" : "Añadir categoría")
+                </button>
+
+                @if (editingId.HasValue)
+                {
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">
+                        Cancelar
+                    </button>
+                }
+            </div>
+        </div>
+    </EditForm>
+
+    <div class="crud-list">
+        @if (isLoading)
+        {
+            <p class="empty-message">Cargando categorías...</p>
+        }
+        else if (categories.Count == 0)
+        {
+            <p class="empty-message">No hay categorías registradas.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th class="actions-column">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in categories)
+                    {
+                        <tr>
+                            <td>@category.Nombre</td>
+                            <td>@category.Descripcion</td>
+                            <td class="actions-column">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => EditCategory(category)">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        @onclick="() => DeleteCategory(category.Id)">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private List<CategoriaDto> categories = [];
+    private CategoriaForm categoryForm = new();
+    private int? editingId;
+    private string? errorMessage;
+    private bool isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            categories = await Api.GetCategoriasAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudieron cargar las categorías: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveCategory()
+    {
+        try
+        {
+            var request = new CategoriaRequest
+            {
+                Nombre = categoryForm.Name,
+                Descripcion = categoryForm.Description
+            };
+
+            if (editingId.HasValue)
+            {
+                await Api.UpdateCategoriaAsync(editingId.Value, request);
+            }
+            else
+            {
+                await Api.CreateCategoriaAsync(request);
+            }
+
+            ResetForm();
+            await LoadCategories();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudo guardar la categoría: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        try
+        {
+            await Api.DeleteCategoriaAsync(id);
+            await LoadCategories();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudo eliminar la categoría: {ex.Message}";
+        }
+    }
+
+    private void EditCategory(CategoriaDto category)
+    {
+        editingId = category.Id;
+
+        categoryForm = new CategoriaForm
+        {
+            Name = category.Nombre,
+            Description = category.Descripcion ?? string.Empty
+        };
+    }
+
+    private void CancelEdit()
+    {
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        editingId = null;
+        categoryForm = new CategoriaForm();
+    }
+
+    private sealed class CategoriaForm
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Name { get; set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
+    }
+}
+

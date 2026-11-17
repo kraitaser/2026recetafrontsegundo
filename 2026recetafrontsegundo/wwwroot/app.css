@@ -60,26 +60,26 @@ h1:focus {
 }
 /* transición simple para entrada/salida de páginas */
 .transition-container {
-    transition: opacity 800ms ease, transform 800ms ease;
+    transition: opacity 1000ms ease, transform 1000ms ease;
     will-change: opacity, transform;
 }
 
     .transition-container.enter {
         opacity: 0;
-        transform: translateY(80px);
-        animation: enterAnim 800ms forwards ease;
+        transform: translateY(800px);
+        animation: enterAnim 1000ms forwards ease;
     }
 
     .transition-container.exit {
         opacity: 1;
         transform: translateY(0);
-        animation: exitAnim 800ms forwards ease;
+        animation: exitAnim 1000ms forwards ease;
     }
 
 @keyframes enterAnim {
     from {
         opacity: 0;
-        transform: translateY(80px);
+        transform: translateY(800px);
     }
 
     to {
@@ -96,6 +96,84 @@ h1:focus {
 
     to {
         opacity: 0;
-        transform: translateY(-80px);
+        transform: translateY(-800px);
+    }
+}
+.crud-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+    .crud-page h1 {
+        margin-bottom: 1.5rem;
+    }
+
+.crud-form {
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: .5rem;
+}
+
+.form-row {
+    display: flex;
+    align-items: end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-field {
+    flex: 1 1 220px;
+}
+
+    .form-field label {
+        display: block;
+        margin-bottom: .4rem;
+        font-weight: 600;
+    }
+
+.form-actions {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.crud-list {
+    overflow-x: auto;
+}
+
+.actions-column {
+    width: 190px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+    .actions-column .btn {
+        margin-left: .35rem;
+    }
+
+.empty-message {
+    padding: 1rem;
+    color: #6c757d;
+    text-align: center;
+    border: 1px dashed #adb5bd;
+    border-radius: .5rem;
+}
+
+@media (max-width: 768px) {
+    .form-actions {
+        width: 100%;
+        margin-top: .5rem;
+    }
+
+        .form-actions .btn {
+            flex: 1;
+        }
+
+    .actions-column {
+        width: auto;
+        text-align: left;
     }
 }

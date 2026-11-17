@@ -16,7 +16,9 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+                <div class="transition-container @transitionClass">
                 <div class="card shadow border-0 login-card">
+                    
                     <div class="card-body p-4">
                         <div class="text-center mb-4">
                             <div class="login-logo bg-brand text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
@@ -26,8 +28,8 @@
                             <p class="text-muted mb-8">Inicia sesion para continuar</p>
                         </div>
 
-                        <div class="transition-container @transitionClass">
-                            @if (!string.IsNullOrEmpty(mensajeError))
+@*                         <div class="transition-container @transitionClass">
+ *@                            @if (!string.IsNullOrEmpty(mensajeError))
                             {
                                 <div class="alert alert-danger alert-dismissible fade show">
                                     <strong>Error:</strong> @mensajeError
@@ -73,6 +75,7 @@
 
                     </div>
                 </div>
+                
             </div>
         </div>
     </div>
@@ -116,12 +119,24 @@
                 var authProvider = (AuthStateProvider)authStateProvider;
                 authProvider.NotificarLogin(respuesta.Token);
 
-                navigation.NavigateTo("/");
+                navigation.NavigateTo("/home");
             }
             else
             {
                 mensajeError = "Credenciales incorrectas. Verifica tu email y/o contraseña";
             }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is null)
+        {
+            mensajeError = "No se puede conectar con el backend. Comprueba que esté iniciado en https://localhost:7031.";
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            mensajeError = "Credenciales incorrectas. Verifica tu email y contraseña.";
+        }
+        catch (HttpRequestException ex)
+        {
+            mensajeError = $"El backend rechazó el inicio de sesión: {ex.Message}";
         }
         catch (Exception ex)
         {

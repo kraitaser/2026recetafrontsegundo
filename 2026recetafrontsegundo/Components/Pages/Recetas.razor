@@ -1,0 +1,391 @@
+@page "/recetas"
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@using _2026recetafrontsegundo.Models
+@inject _2026recetafrontsegundo.Services.ApiClient Api
+
+<PageTitle>Recetas</PageTitle>
+
+<div class="crud-page">
+    <h1>Recetas</h1>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <EditForm Model="recipeForm" OnValidSubmit="SaveRecipe" class="crud-form">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="recipe-name">Nombre</label>
+                <InputText id="recipe-name"
+                           class="form-control"
+                           @bind-Value="recipeForm.Name" />
+                <ValidationMessage For="@(() => recipeForm.Name)" />
+            </div>
+
+            <div class="form-field">
+                <label for="recipe-description">Descripción</label>
+                <InputText id="recipe-description"
+                           class="form-control"
+                           @bind-Value="recipeForm.Description" />
+            </div>
+
+            <div class="form-field">
+                <label>Categorías</label>
+                @foreach (var category in categories)
+                {
+                    <label class="d-block">
+                        <input type="checkbox"
+                               checked="@recipeForm.CategoryIds.Contains(category.Id)"
+                               @onclick="() => ToggleCategory(category.Id)" />
+                        @category.Nombre
+                    </label>
+                }
+            </div>
+
+            <div class="form-field">
+                <label>Ingredientes</label>
+                <div class="form-row">
+                    <InputSelect class="form-select" @bind-Value="selectedIngredientId">
+                        <option value="0">Selecciona un ingrediente</option>
+                        @foreach (var ingredient in ingredients)
+                        {
+                            <option value="@ingredient.Id">@ingredient.Nombre</option>
+                        }
+                    </InputSelect>
+                    <InputNumber class="form-control" @bind-Value="ingredientQuantity" />
+                    <InputText class="form-control" @bind-Value="ingredientUnit" />
+                    <button type="button" class="btn btn-secondary" @onclick="AddIngredient">
+                        Añadir ingrediente
+                    </button>
+                </div>
+                @foreach (var ingredient in recipeForm.Ingredients)
+                {
+                    <div>@GetIngredientName(ingredient.IngredientId) - @ingredient.Quantity @ingredient.Unit</div>
+                }
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    @(editingId.HasValue ? "Guardar cambios" : "Añadir receta")
+                </button>
+
+                @if (editingId.HasValue)
+                {
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">
+                        Cancelar
+                    </button>
+                }
+            </div>
+        </div>
+    </EditForm>
+
+    <div class="crud-list">
+        @if (recipes.Count == 0)
+        {
+            <p class="empty-message">No hay recetas registradas.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Categorías</th>
+                        <th>Ingredientes</th>
+                        <th class="actions-column">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var recipe in recipes)
+                    {
+                        <tr>
+                            <td>@recipe.Nombre</td>
+                            <td>@recipe.Descripcion</td>
+                            <td>@GetCategoryNames(recipe.CategoryIds)</td>
+                            <td>@string.Join(", ", recipe.Ingredientes.Select(i => $"{i.IngredientName} ({i.Quantity} {i.Unit})"))</td>
+                            <td class="actions-column">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => EditRecipe(recipe)">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        @onclick="() => DeleteRecipe(recipe.Id)">
+                                    Eliminar
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        @onclick="() => LoadComments(recipe.Id)">
+                                    Comentarios
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    @if (selectedRecipeId.HasValue)
+    {
+        <div class="crud-list mt-4">
+            <h2>Comentarios</h2>
+
+            @if (comments.Count == 0)
+            {
+                <p class="empty-message">Esta receta todavía no tiene comentarios.</p>
+            }
+            else
+            {
+                @foreach (var comment in comments)
+                {
+                    <div class="border-bottom py-2">
+                        <strong>@(comment.DisplayName ?? comment.UserName ?? "Usuario")</strong>
+                        <small class="text-muted">@comment.CreatedAtUtc.ToLocalTime().ToString("g")</small>
+                        <div>@comment.Texto</div>
+                    </div>
+                }
+            }
+
+            <EditForm Model="commentForm" OnValidSubmit="CreateComment" class="mt-3">
+                <DataAnnotationsValidator />
+                <InputTextArea class="form-control" @bind-Value="commentForm.Texto" />
+                <ValidationMessage For="@(() => commentForm.Texto)" />
+                <button type="submit" class="btn btn-primary mt-2">Añadir comentario</button>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    private List<CategoriaDto> categories = [];
+    private List<IngredienteDto> ingredients = [];
+    private List<RecetaDto> recipes = [];
+    private RecipeForm recipeForm = new();
+    private int? editingId;
+    private string? errorMessage;
+    private List<ComentarioDto> comments = [];
+    private ComentarioRequest commentForm = new();
+    private int? selectedRecipeId;
+    private int selectedIngredientId;
+    private decimal ingredientQuantity;
+    private string ingredientUnit = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+        await LoadIngredients();
+        await LoadRecipes();
+    }
+
+    private async Task LoadComments(int recipeId)
+    {
+        try
+        {
+            errorMessage = null;
+            selectedRecipeId = recipeId;
+            comments = await Api.GetComentariosAsync(recipeId);
+            commentForm = new ComentarioRequest();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudieron cargar los comentarios: {ex.Message}";
+        }
+    }
+
+    private async Task CreateComment()
+    {
+        if (!selectedRecipeId.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            errorMessage = null;
+            await Api.CreateComentarioAsync(selectedRecipeId.Value, commentForm);
+            comments = await Api.GetComentariosAsync(selectedRecipeId.Value);
+            commentForm = new ComentarioRequest();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            errorMessage = "Debes iniciar sesión para publicar un comentario.";
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudo crear el comentario: {ex.Message}";
+        }
+    }
+
+    private async Task LoadIngredients()
+    {
+        try
+        {
+            ingredients = await Api.GetIngredientesAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudieron cargar los ingredientes: {ex.Message}";
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            errorMessage = null;
+            categories = await Api.GetCategoriasAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudieron cargar las categorías: {ex.Message}";
+        }
+    }
+
+    private async Task LoadRecipes()
+    {
+        try
+        {
+            errorMessage = null;
+            recipes = await Api.GetRecetasAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudieron cargar las recetas: {ex.Message}";
+        }
+    }
+
+    private async Task SaveRecipe()
+    {
+        try
+        {
+            var request = new RecetaRequest
+            {
+                Nombre = recipeForm.Name,
+                Descripcion = recipeForm.Description,
+                CategoryIds = [.. recipeForm.CategoryIds],
+                Ingredientes = [.. recipeForm.Ingredients]
+            };
+
+            if (editingId.HasValue)
+            {
+                await Api.UpdateRecetaAsync(editingId.Value, request);
+            }
+            else
+            {
+                await Api.CreateRecetaAsync(request);
+            }
+
+            ResetForm();
+            await LoadRecipes();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudo guardar la receta: {ex.Message}";
+        }
+    }
+
+    private void EditRecipe(RecetaDto recipe)
+    {
+        editingId = recipe.Id;
+
+        recipeForm = new RecipeForm
+        {
+            Name = recipe.Nombre,
+            Description = recipe.Descripcion ?? string.Empty,
+            CategoryIds = [.. recipe.CategoryIds],
+            Ingredients = recipe.Ingredientes.Select(ingredient => new RecetaIngredienteRequest
+            {
+                IngredientId = ingredient.IngredientId,
+                Quantity = ingredient.Quantity,
+                Unit = ingredient.Unit
+            }).ToList()
+        };
+    }
+
+    private async Task DeleteRecipe(int id)
+    {
+        try
+        {
+            await Api.DeleteRecetaAsync(id);
+
+            if (editingId == id)
+            {
+                ResetForm();
+            }
+
+            await LoadRecipes();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudo eliminar la receta: {ex.Message}";
+        }
+    }
+
+    private void CancelEdit()
+    {
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        editingId = null;
+        recipeForm = new RecipeForm();
+        selectedIngredientId = 0;
+        ingredientQuantity = 0;
+        ingredientUnit = string.Empty;
+    }
+
+    private void ToggleCategory(int categoryId)
+    {
+        if (!recipeForm.CategoryIds.Remove(categoryId))
+        {
+            recipeForm.CategoryIds.Add(categoryId);
+        }
+    }
+
+    private void AddIngredient()
+    {
+        if (selectedIngredientId <= 0 || ingredientQuantity <= 0 || string.IsNullOrWhiteSpace(ingredientUnit))
+        {
+            errorMessage = "Selecciona un ingrediente e indica una cantidad y una unidad.";
+            return;
+        }
+
+        recipeForm.Ingredients.RemoveAll(ingredient => ingredient.IngredientId == selectedIngredientId);
+        recipeForm.Ingredients.Add(new RecetaIngredienteRequest
+        {
+            IngredientId = selectedIngredientId,
+            Quantity = ingredientQuantity,
+            Unit = ingredientUnit
+        });
+
+        selectedIngredientId = 0;
+        ingredientQuantity = 0;
+        ingredientUnit = string.Empty;
+        errorMessage = null;
+    }
+
+    private string GetIngredientName(int ingredientId) =>
+        ingredients.FirstOrDefault(ingredient => ingredient.Id == ingredientId)?.Nombre
+        ?? $"Ingrediente {ingredientId}";
+
+    private string GetCategoryNames(IEnumerable<int> categoryIds) =>
+        string.Join(", ", categories
+            .Where(category => categoryIds.Contains(category.Id))
+            .Select(category => category.Nombre));
+
+    private sealed class RecipeForm
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Name { get; set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
+        public List<int> CategoryIds { get; set; } = [];
+        public List<RecetaIngredienteRequest> Ingredients { get; set; } = [];
+    }
+}

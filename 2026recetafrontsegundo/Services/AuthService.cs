@@ -1,75 +1,75 @@
 ﻿using System.Net;
+using System.Net.Http.Json;
 using _2026recetafrontsegundo.DTOs;
 
 namespace _2026recetafrontsegundo.Services
 {
     public interface IAuthService
     {
-        Task<RespuestaAutenticacion> Login(CredencialesUsuario credencialesUsuario);
-        Task<RespuestaAutenticacion> Register(CredencialesUsuario credencialesUsuario);
-        Task<RespuestaAutenticacion> RenovarToken();
+        Task<RespuestaAutenticacion?> Login(CredencialesUsuario credencialesUsuario);
+        Task<RespuestaAutenticacion?> Register(CredencialesUsuario credencialesUsuario);
+        Task<RespuestaAutenticacion?> RenovarToken();
         Task logout();
     }
     public class AuthService : IAuthService
     {
         private readonly HttpClient httpClient;
         private readonly ITokenService tokenService;
-        private const string endpoint = "http://receta2eb20263.somee.com/api/Accounts";
-        public AuthService(HttpClient httpClient, ITokenService tokenService)
+        private readonly string endpoint;
+
+        public AuthService(
+            HttpClient httpClient,
+            ITokenService tokenService,
+            IConfiguration configuration)
         {
             this.httpClient = httpClient;
             this.tokenService = tokenService;
+            endpoint = $"{(Environment.GetEnvironmentVariable("API_URL")
+                ?? configuration["Api:BaseUrl"])?.TrimEnd('/')
+                ?? throw new InvalidOperationException("No se ha configurado Api:BaseUrl.")}/api/Accounts";
         }
+
+        private async Task<RespuestaAutenticacion?> SendAuthenticationRequestAsync(
+            HttpRequestMessage request)
+        {
+            using var response = await httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var details = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(
+                    $"La API respondió {(int)response.StatusCode} ({response.ReasonPhrase}). {details}",
+                    null,
+                    response.StatusCode);
+            }
+
+            var respuesta = await response.Content.ReadFromJsonAsync<RespuestaAutenticacion>();
+            if (respuesta is not null)
+            {
+                await tokenService.GuardarToken(respuesta.Token, respuesta.Expiracion);
+            }
+
+            return respuesta;
+        }
+
         public async Task<RespuestaAutenticacion?> Login(CredencialesUsuario credencialesUsuario)
         {
-            try
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{endpoint}/login")
             {
-                var response = await httpClient.PostAsJsonAsync($"{endpoint}/Login", credencialesUsuario);
-                if (response.IsSuccessStatusCode)
-                {
-                    var respuesta = await response.Content.ReadFromJsonAsync<RespuestaAutenticacion>();
+                Content = JsonContent.Create(credencialesUsuario)
+            };
 
-                    if (respuesta != null)
-                    {
-                        await tokenService.GuardarToken(respuesta.Token, respuesta.Expiracion);
-                        return respuesta;
-                    }
-                }
-                else
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"error en login: {error}");
-                }
-                return null;
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine($"Exception in Login: {ex.Message}");
-                return null;
-            }
+            return await SendAuthenticationRequestAsync(request);
         }
+
         public async Task<RespuestaAutenticacion?> Register(CredencialesUsuario credenciales)
         {
-            try
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{endpoint}/register")
             {
-                var response = await httpClient.PostAsJsonAsync($"{endpoint}/Register", credenciales);
-                //todo revisar el enpoin en el baken
-                if (response.IsSuccessStatusCode)
-                {
-                    var respuesta = await response.Content.ReadFromJsonAsync<RespuestaAutenticacion>();
-                    if(respuesta != null)
-                    {
-                        await tokenService.GuardarToken(respuesta.Token, respuesta.Expiracion);
-                        return respuesta;
-                    }
-                }
-                return null;
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine($"error al registrar:{ex.Message}");
-                return null;
-            }
+                Content = JsonContent.Create(credenciales)
+            };
+
+            return await SendAuthenticationRequestAsync(request);
         }
         public async Task<RespuestaAutenticacion?> RenovarToken()
         {
@@ -80,13 +80,13 @@ namespace _2026recetafrontsegundo.Services
                     return null;
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-                var response = await httpClient.GetAsync($"{endpoint}/RenovarToken");
+                var response = await httpClient.GetAsync(endpoint);
                 if (response.IsSuccessStatusCode)
                 {
                     var respuesta = await response.Content.ReadFromJsonAsync<RespuestaAutenticacion>();
-                    if(response != null)
+                    if (respuesta != null)
                     {
-                        await tokenService.GuardarToken(respuesta!.Token, respuesta.Expiracion);
+                        await tokenService.GuardarToken(respuesta.Token, respuesta.Expiracion);
                         return respuesta;
                     }
                 }

@@ -1,0 +1,190 @@
+@page "/ingredientes"
+@rendermode InteractiveServer
+@using _2026recetafrontsegundo.Models
+@using _2026recetafrontsegundo.Services
+@using System.ComponentModel.DataAnnotations
+@inject ApiClient Api
+
+<PageTitle>Ingredientes</PageTitle>
+
+<div class="crud-page">
+    <h1>Ingredientes</h1>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <EditForm Model="ingredientForm" OnValidSubmit="SaveIngredient" class="crud-form">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="ingredient-name">Nombre</label>
+                <InputText id="ingredient-name"
+                           class="form-control"
+                            @bind-Value="ingredientForm.Nombre" />
+                <ValidationMessage For="@(() => ingredientForm.Nombre)" />
+            </div>
+
+            <div class="form-field">
+                <label for="ingredient-description">Descripción</label>
+                <InputText id="ingredient-description"
+                           class="form-control"
+                           @bind-Value="ingredientForm.Description" />
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    @(editingId.HasValue ? "Guardar cambios" : "Añadir ingrediente")
+                </button>
+
+                @if (editingId.HasValue)
+                {
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">
+                        Cancelar
+                    </button>
+                }
+            </div>
+        </div>
+    </EditForm>
+
+    <div class="crud-list">
+        @if (ingredients.Count == 0)
+        {
+            <p class="empty-message">No hay ingredientes registrados.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th class="actions-column">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ingredient in ingredients)
+                    {
+                        <tr>
+                             <td>@ingredient.Nombre</td>
+                             <td>@ingredient.Descripcion</td>
+                            <td class="actions-column">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => EditIngredient(ingredient)">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        @onclick="() => DeleteIngredient(ingredient.Id)">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private List<IngredienteDto> ingredients = [];
+    private IngredientForm ingredientForm = new();
+    private int? editingId;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadIngredients();
+    }
+
+    private async Task LoadIngredients()
+    {
+        try
+        {
+            errorMessage = null;
+            ingredients = await Api.GetIngredientesAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudieron cargar los ingredientes: {ex.Message}";
+        }
+    }
+
+    private async Task SaveIngredient()
+    {
+        try
+        {
+            var request = new IngredienteRequest
+            {
+                Nombre = ingredientForm.Nombre,
+                Descripcion = ingredientForm.Description
+            };
+
+            if (editingId.HasValue)
+            {
+                await Api.UpdateIngredienteAsync(editingId.Value, request);
+            }
+            else
+            {
+                await Api.CreateIngredienteAsync(request);
+            }
+
+            ResetForm();
+            await LoadIngredients();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudo guardar el ingrediente: {ex.Message}";
+        }
+    }
+
+    private void EditIngredient(IngredienteDto ingredient)
+    {
+        editingId = ingredient.Id;
+        ingredientForm = new IngredientForm
+        {
+            Nombre = ingredient.Nombre,
+            Description = ingredient.Descripcion ?? string.Empty
+        };
+    }
+
+    private async Task DeleteIngredient(int id)
+    {
+        try
+        {
+            await Api.DeleteIngredienteAsync(id);
+            await LoadIngredients();
+
+            if (editingId == id)
+            {
+                ResetForm();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"No se pudo eliminar el ingrediente: {ex.Message}";
+        }
+    }
+
+    private void CancelEdit()
+    {
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        editingId = null;
+        ingredientForm = new IngredientForm();
+    }
+
+    private sealed class IngredientForm
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        public string Nombre { get; set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
+    }
+}
