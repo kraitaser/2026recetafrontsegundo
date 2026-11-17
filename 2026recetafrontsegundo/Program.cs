@@ -17,7 +17,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     o.KnownProxies.Clear();
 });
 
-//var app = builder.Build();
+var app = builder.Build();
 
 app.UseForwardedHeaders();   // lo PRIMERO del pipeline
 
@@ -114,7 +114,7 @@ builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(
     sp => sp.GetRequiredService<AuthStateProvider>());
 
-var app = builder.Build();
+//var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
