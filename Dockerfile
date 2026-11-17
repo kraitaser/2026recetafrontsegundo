@@ -9,7 +9,7 @@ WORKDIR /src/2026recetafrontsegundo
 RUN dotnet publish 2026recetafrontsegundo.csproj \
 	--configuration Release \
 	--output /app/publish \
-	--no-restore
+	
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

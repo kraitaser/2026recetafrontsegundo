@@ -6,3 +6,9 @@
 *.user
 *.suo
 README.md
+
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/*.user
