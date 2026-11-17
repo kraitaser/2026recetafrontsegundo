@@ -1,54 +1,40 @@
 using _2026recetafrontsegundo.Auth;
 using _2026recetafrontsegundo.Components;
 using _2026recetafrontsegundo.Services;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
-using StackExchange.Redis;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
-
-
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
-// (junto a los demás builder.Services)
-builder.Services.Configure<ForwardedHeadersOptions>(o =>
+
+// ---------- Redis ----------
+var redisConnection = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
+    ?.Trim().Trim('"', '\'');
+
+if (!string.IsNullOrWhiteSpace(redisConnection))
 {
-    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    o.KnownNetworks.Clear();
-    o.KnownProxies.Clear();
-});
-
-var app = builder.Build();
-
-app.UseForwardedHeaders();   // lo PRIMERO del pipeline
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
+    var idx = redisConnection.IndexOf("rediss://", StringComparison.OrdinalIgnoreCase);
+    if (idx < 0) idx = redisConnection.IndexOf("redis://", StringComparison.OrdinalIgnoreCase);
+    if (idx > 0) redisConnection = redisConnection[idx..];
 }
-// ...el resto igual
-
-var redisConnection = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
 
 if (string.IsNullOrWhiteSpace(redisConnection))
 {
-    throw new InvalidOperationException(
-        "No se ha configurado REDIS_CONNECTION_STRING.");
+    throw new InvalidOperationException("No se ha configurado REDIS_CONNECTION_STRING.");
 }
 
-var redisOptions = new ConfigurationOptions
-{
-    AbortOnConnectFail = false,
-    ConnectTimeout = 15_000,
-    SyncTimeout = 15_000
-};
+ConfigurationOptions redisOptions;
 
-if (Uri.TryCreate(redisConnection.Trim(), UriKind.Absolute, out var redisUri)
+if (Uri.TryCreate(redisConnection, UriKind.Absolute, out var redisUri)
     && (redisUri.Scheme.Equals("redis", StringComparison.OrdinalIgnoreCase)
         || redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase)))
 {
-    redisOptions.Ssl = redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase);
-    redisOptions.SslHost = redisUri.Host;
+    redisOptions = new ConfigurationOptions
+    {
+        Ssl = redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase),
+        SslHost = redisUri.Host
+    };
     redisOptions.EndPoints.Add(redisUri.Host, redisUri.Port > 0 ? redisUri.Port : 6379);
 
     var userInfo = redisUri.UserInfo;
@@ -67,22 +53,31 @@ if (Uri.TryCreate(redisConnection.Trim(), UriKind.Absolute, out var redisUri)
 else
 {
     redisOptions = ConfigurationOptions.Parse(redisConnection);
-    redisOptions.AbortOnConnectFail = false;
-    redisOptions.ConnectTimeout = 15_000;
-    redisOptions.SyncTimeout = 15_000;
 }
+
+redisOptions.AbortOnConnectFail = false;
+redisOptions.ConnectTimeout = 15_000;
+redisOptions.SyncTimeout = 15_000;
 
 var redis = ConnectionMultiplexer.Connect(redisOptions);
 
+// ---------- SERVICIOS (todo antes de Build) ----------
+builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+
 builder.Services.AddDataProtection()
     .SetApplicationName("2026recetafrontsegundo")
-    .PersistKeysToStackExchangeRedis(
-        redis,
-        "recetario:data-protection-keys");
+    .PersistKeysToStackExchangeRedis(redis, "recetario:data-protection-keys");
 
 builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = ".Recetario.Antiforgery.v3";
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
 });
 
 builder.Services.AddRazorComponents()
@@ -104,17 +99,18 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 
     client.BaseAddress = new Uri(baseUrl);
 });
-builder.Services.AddAntiforgery(options =>
-{
-    options.Cookie.Name = ".Recetario.Antiforgery.v3";
-});
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(
     sp => sp.GetRequiredService<AuthStateProvider>());
 
-//var app = builder.Build();
+// ---------- BUILD ----------
+var app = builder.Build();
+
+// ---------- PIPELINE (todo después de Build) ----------
+app.UseForwardedHeaders();   // siempre primero
 
 if (!app.Environment.IsDevelopment())
 {
@@ -122,14 +118,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseStatusCodePagesWithReExecute(
-    "/not-found",
-    createScopeForStatusCodePages: true);
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 if (app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();
