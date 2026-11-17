@@ -61,7 +61,7 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.Name = ".Recetario.Antiforgery.v2";
+    options.Cookie.Name = ".Recetario.Antiforgery.v3";
 });
 
 builder.Services.AddRazorComponents()

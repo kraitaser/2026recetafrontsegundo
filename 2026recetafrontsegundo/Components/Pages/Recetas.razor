@@ -14,7 +14,7 @@
         <div class="alert alert-danger">@errorMessage</div>
     }
 
-    <EditForm Model="recipeForm" OnValidSubmit="SaveRecipe" class="crud-form">
+    <EditForm Model="recipeForm" OnValidSubmit="SaveRecipe" Enhance="false" class="crud-form">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
@@ -151,7 +151,7 @@
                 }
             }
 
-            <EditForm Model="commentForm" OnValidSubmit="CreateComment" class="mt-3">
+            <EditForm Model="commentForm" OnValidSubmit="CreateComment" Enhance="false" class="mt-3">
                 <DataAnnotationsValidator />
                 <InputTextArea class="form-control" @bind-Value="commentForm.Texto" />
                 <ValidationMessage For="@(() => commentForm.Texto)" />

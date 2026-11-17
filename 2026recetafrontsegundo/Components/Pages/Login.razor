@@ -37,7 +37,7 @@
                                     @onclick="() => mensajeError = string.Empty"></button>
                                 </div>
                             }
-                            <EditForm Model="credenciales" OnValidSubmit="HandleLogin">
+                            <EditForm Model="credenciales" OnValidSubmit="HandleLogin" Enhance="false">
                                 <DataAnnotationsValidator />
                                 <div class="mb-3">
                                     <label class="form-label">Email</label>
