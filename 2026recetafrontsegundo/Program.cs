@@ -15,7 +15,43 @@ if (string.IsNullOrWhiteSpace(redisConnection))
         "No se ha configurado REDIS_CONNECTION_STRING.");
 }
 
-var redis = ConnectionMultiplexer.Connect(redisConnection);
+var redisOptions = new ConfigurationOptions
+{
+    AbortOnConnectFail = false,
+    ConnectTimeout = 15_000,
+    SyncTimeout = 15_000
+};
+
+if (Uri.TryCreate(redisConnection.Trim(), UriKind.Absolute, out var redisUri)
+    && (redisUri.Scheme.Equals("redis", StringComparison.OrdinalIgnoreCase)
+        || redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase)))
+{
+    redisOptions.Ssl = redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase);
+    redisOptions.SslHost = redisUri.Host;
+    redisOptions.EndPoints.Add(redisUri.Host, redisUri.Port > 0 ? redisUri.Port : 6379);
+
+    var userInfo = redisUri.UserInfo;
+    var separator = userInfo.IndexOf(':');
+
+    if (separator >= 0)
+    {
+        redisOptions.User = Uri.UnescapeDataString(userInfo[..separator]);
+        redisOptions.Password = Uri.UnescapeDataString(userInfo[(separator + 1)..]);
+    }
+    else if (!string.IsNullOrWhiteSpace(userInfo))
+    {
+        redisOptions.Password = Uri.UnescapeDataString(userInfo);
+    }
+}
+else
+{
+    redisOptions = ConfigurationOptions.Parse(redisConnection);
+    redisOptions.AbortOnConnectFail = false;
+    redisOptions.ConnectTimeout = 15_000;
+    redisOptions.SyncTimeout = 15_000;
+}
+
+var redis = ConnectionMultiplexer.Connect(redisOptions);
 
 builder.Services.AddDataProtection()
     .SetApplicationName("2026recetafrontsegundo")
