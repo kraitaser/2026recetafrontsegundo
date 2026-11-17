@@ -125,7 +125,7 @@
         }
         catch (HttpRequestException ex) when (ex.StatusCode is null)
         {
-            mensajeError = "No se puede conectar con el backend. Comprueba que esté iniciado en https://localhost:7031.";
+            mensajeError = "No se puede conectar con el backend.";
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
