@@ -4,6 +4,26 @@ using _2026recetafrontsegundo.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.HttpOverrides;
+
+// (junto a los demás builder.Services)
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
+var app = builder.Build();
+
+app.UseForwardedHeaders();   // lo PRIMERO del pipeline
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
+}
+// ...el resto igual
 
 var builder = WebApplication.CreateBuilder(args);
 
