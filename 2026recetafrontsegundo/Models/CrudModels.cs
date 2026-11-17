@@ -77,12 +77,16 @@ public sealed class RecetaIngredienteDto
 
 public sealed class RecetaIngredienteRequest
 {
+    [Range(1, int.MaxValue)]
     [JsonPropertyName("ingredientId")]
     public int IngredientId { get; set; }
 
+    [Range(typeof(decimal), "0.000001", "79228162514264337593543950335")]
     [JsonPropertyName("quantity")]
     public decimal Quantity { get; set; }
 
+    [Required]
+    [StringLength(30)]
     [JsonPropertyName("unit")]
     public string Unit { get; set; } = string.Empty;
 }
@@ -109,6 +113,7 @@ public sealed class IngredienteRequest
     [JsonPropertyName("name")]
     public string Nombre { get; set; } = string.Empty;
 
+    [StringLength(250)]
     [JsonPropertyName("description")]
     public string? Descripcion { get; set; }
 }

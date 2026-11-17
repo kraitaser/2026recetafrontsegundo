@@ -1,11 +1,15 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using _2026recetafrontsegundo.Models;
 
 namespace _2026recetafrontsegundo.Services;
 
 public sealed class ApiClient
 {
+    private static readonly JsonSerializerOptions jsonOptions =
+        new(JsonSerializerDefaults.Web);
+
     private readonly HttpClient httpClient;
     private readonly ITokenService tokenService;
 
@@ -32,6 +36,9 @@ public sealed class ApiClient
 
         return request;
     }
+
+    private static JsonContent CreateJsonContent<T>(T model) =>
+        JsonContent.Create(model, options: jsonOptions);
 
     private async Task EnsureSuccessAsync(HttpResponseMessage response)
     {
@@ -103,7 +110,7 @@ public sealed class ApiClient
             HttpMethod.Post,
             "/api/Categories");
 
-        request.Content = JsonContent.Create(model);
+        request.Content = CreateJsonContent(model);
 
         using var response = await httpClient.SendAsync(request);
         await EnsureSuccessAsync(response);
@@ -119,7 +126,7 @@ public sealed class ApiClient
             HttpMethod.Put,
             $"/api/Categories/{id}");
 
-        request.Content = JsonContent.Create(model);
+        request.Content = CreateJsonContent(model);
 
         using var response = await httpClient.SendAsync(request);
         await EnsureSuccessAsync(response);
@@ -179,7 +186,7 @@ public sealed class ApiClient
             HttpMethod.Post,
             "/api/Ingredients");
 
-        request.Content = JsonContent.Create(model);
+        request.Content = CreateJsonContent(model);
 
         using var response = await httpClient.SendAsync(request);
         await EnsureSuccessAsync(response);
@@ -195,7 +202,7 @@ public sealed class ApiClient
             HttpMethod.Put,
             $"/api/Ingredients/{id}");
 
-        request.Content = JsonContent.Create(model);
+        request.Content = CreateJsonContent(model);
 
         using var response = await httpClient.SendAsync(request);
         await EnsureSuccessAsync(response);
@@ -255,7 +262,7 @@ public sealed class ApiClient
             HttpMethod.Post,
             "/api/Recipes");
 
-        request.Content = JsonContent.Create(model);
+        request.Content = CreateJsonContent(model);
 
         using var response = await httpClient.SendAsync(request);
         await EnsureSuccessAsync(response);
@@ -271,7 +278,7 @@ public sealed class ApiClient
             HttpMethod.Put,
             $"/api/Recipes/{id}");
 
-        request.Content = JsonContent.Create(model);
+        request.Content = CreateJsonContent(model);
 
         using var response = await httpClient.SendAsync(request);
         await EnsureSuccessAsync(response);
@@ -308,7 +315,7 @@ public sealed class ApiClient
             HttpMethod.Post,
             $"/api/Recipes/{recetaId}/comments");
 
-        request.Content = JsonContent.Create(model);
+        request.Content = CreateJsonContent(model);
 
         using var response = await httpClient.SendAsync(request);
         await EnsureSuccessAsync(response);
