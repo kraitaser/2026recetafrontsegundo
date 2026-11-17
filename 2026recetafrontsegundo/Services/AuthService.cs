@@ -24,9 +24,16 @@ namespace _2026recetafrontsegundo.Services
         {
             this.httpClient = httpClient;
             this.tokenService = tokenService;
-            endpoint = $"{(Environment.GetEnvironmentVariable("API_URL")
+            var baseUrl = (Environment.GetEnvironmentVariable("API_URL")
                 ?? configuration["Api:BaseUrl"])?.TrimEnd('/')
-                ?? throw new InvalidOperationException("No se ha configurado Api:BaseUrl.")}/api/Accounts";
+                ?? throw new InvalidOperationException("No se ha configurado Api:BaseUrl.");
+
+            if (baseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+            {
+                baseUrl = baseUrl[..^4];
+            }
+
+            endpoint = $"{baseUrl}/api/Accounts";
         }
 
         private async Task<RespuestaAutenticacion?> SendAuthenticationRequestAsync(

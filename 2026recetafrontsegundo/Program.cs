@@ -16,6 +16,12 @@ builder.Services.AddHttpClient<ApiClient>(client =>
         ?? builder.Configuration["Api:BaseUrl"]
         ?? throw new InvalidOperationException("No se ha configurado Api:BaseUrl.");
 
+    baseUrl = baseUrl.TrimEnd('/');
+    if (baseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+    {
+        baseUrl = baseUrl[..^4];
+    }
+
     client.BaseAddress = new Uri(baseUrl);
 });
 

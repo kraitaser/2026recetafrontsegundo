@@ -89,9 +89,12 @@ public sealed class RecetaIngredienteRequest
 
 public sealed class CategoriaRequest
 {
-    [JsonPropertyName("Name")]
+    [Required]
+    [StringLength(60, MinimumLength = 2)]
+    [JsonPropertyName("name")]
     public string Nombre { get; set; } = string.Empty;
 
+    [StringLength(250)]
     [JsonPropertyName("description")]
     public string? Descripcion { get; set; }
 
@@ -101,7 +104,9 @@ public sealed class CategoriaRequest
 
 public sealed class IngredienteRequest
 {
-    [JsonPropertyName("Name")]
+    [Required]
+    [StringLength(60, MinimumLength = 2)]
+    [JsonPropertyName("name")]
     public string Nombre { get; set; } = string.Empty;
 
     [JsonPropertyName("description")]
@@ -110,9 +115,12 @@ public sealed class IngredienteRequest
 
 public sealed class RecetaRequest
 {
-    [JsonPropertyName("Name")]
+    [Required]
+    [StringLength(60, MinimumLength = 2)]
+    [JsonPropertyName("name")]
     public string Nombre { get; set; } = string.Empty;
 
+    [StringLength(250)]
     [JsonPropertyName("description")]
     public string? Descripcion { get; set; }
 

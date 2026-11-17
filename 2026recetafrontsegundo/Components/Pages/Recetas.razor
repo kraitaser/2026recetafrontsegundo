@@ -350,7 +350,9 @@
 
     private void AddIngredient()
     {
-        if (selectedIngredientId <= 0 || ingredientQuantity <= 0 || string.IsNullOrWhiteSpace(ingredientUnit))
+        if (selectedIngredientId <= 0 || ingredientQuantity <= 0
+            || string.IsNullOrWhiteSpace(ingredientUnit)
+            || ingredientUnit.Length > 30)
         {
             errorMessage = "Selecciona un ingrediente e indica una cantidad y una unidad.";
             return;
@@ -382,8 +384,10 @@
     private sealed class RecipeForm
     {
         [Required(ErrorMessage = "El nombre es obligatorio.")]
+        [StringLength(60, MinimumLength = 2, ErrorMessage = "El nombre debe tener entre 2 y 60 caracteres.")]
         public string Name { get; set; } = string.Empty;
 
+        [StringLength(250, ErrorMessage = "La descripción no puede superar los 250 caracteres.")]
         public string Description { get; set; } = string.Empty;
         public List<int> CategoryIds { get; set; } = [];
         public List<RecetaIngredienteRequest> Ingredients { get; set; } = [];
