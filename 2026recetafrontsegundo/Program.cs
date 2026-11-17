@@ -17,7 +17,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     o.KnownProxies.Clear();
 });
 
-var app = builder.Build();
+//var app = builder.Build();
 
 app.UseForwardedHeaders();   // lo PRIMERO del pipeline
 
