@@ -1,9 +1,24 @@
 using _2026recetafrontsegundo.Auth;
 using _2026recetafrontsegundo.Components;
 using _2026recetafrontsegundo.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var dataProtectionPath = Environment.GetEnvironmentVariable("DATA_PROTECTION_KEYS_PATH")
+    ?? Path.Combine(builder.Environment.ContentRootPath, "data-protection-keys");
+
+Directory.CreateDirectory(dataProtectionPath);
+
+builder.Services.AddDataProtection()
+    .SetApplicationName("2026recetafrontsegundo")
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
+
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = ".Recetario.Antiforgery.v2";
+});
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -43,7 +58,10 @@ app.UseStatusCodePagesWithReExecute(
     "/not-found",
     createScopeForStatusCodePages: true);
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAntiforgery();
 
 app.MapStaticAssets();
