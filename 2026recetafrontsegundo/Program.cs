@@ -3,17 +3,25 @@ using _2026recetafrontsegundo.Components;
 using _2026recetafrontsegundo.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var dataProtectionPath = Environment.GetEnvironmentVariable("DATA_PROTECTION_KEYS_PATH")
-    ?? Path.Combine(builder.Environment.ContentRootPath, "data-protection-keys");
+var redisConnection = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
 
-Directory.CreateDirectory(dataProtectionPath);
+if (string.IsNullOrWhiteSpace(redisConnection))
+{
+    throw new InvalidOperationException(
+        "No se ha configurado REDIS_CONNECTION_STRING.");
+}
+
+var redis = ConnectionMultiplexer.Connect(redisConnection);
 
 builder.Services.AddDataProtection()
     .SetApplicationName("2026recetafrontsegundo")
-    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
+    .PersistKeysToStackExchangeRedis(
+        redis,
+        "recetario:data-protection-keys");
 
 builder.Services.AddAntiforgery(options =>
 {
