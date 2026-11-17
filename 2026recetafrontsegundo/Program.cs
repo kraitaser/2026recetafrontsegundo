@@ -83,7 +83,10 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 
     client.BaseAddress = new Uri(baseUrl);
 });
-
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = ".Recetario.Antiforgery.v3";
+});
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthStateProvider>();
